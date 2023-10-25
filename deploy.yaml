@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: namespace
+metadata:
+  name: doh-im-dumb
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: doh-dumb-server
+  namespace: doh-im-dumb
+  labels:
+    app: doh-dumb-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: doh-dumb-server
+  template:
+    metadata:
+      labels:
+        app: doh-dumb-server
+    spec:
+      containers:
+        - name: doh-dumb-server
+          image: registry.danya02.ru/danya02/doh-im-dumb:latest
+          imagePullPolicy: Always
+          env:
+            - name: DNS_SERVER
+              value: "1.1.1.1"
+          ports:
+            - name: web
+              containerPort: 3000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: doh-dumb-service
+  namespace: doh-im-dumb
+
+spec:
+  ports:
+    - name: web
+      port: 80
+      targetPort: web
+
+  selector:
+    app: doh-dumb-server
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: doh-dumb-ingress
+  namespace: doh-im-dumb
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    cert-manager.io/cluster-issuer: letsencrypt-issuer
+spec:
+  tls:
+  - hosts:
+     - doh.danya02.ru
+    secretName: default-cert
+  rules:
+  - host: doh.danya02.ru
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: doh-dumb-service
+            port:
+              name: web
