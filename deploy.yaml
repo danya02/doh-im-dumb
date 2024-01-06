@@ -92,7 +92,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-  - match: Host(`doh.danya02.ru`)
+  - match: Host(`doh.danya02.ru`) && PathPrefix(`/dns-query`)
     kind: Rule
     services:
     - name: doh-dumb-service
